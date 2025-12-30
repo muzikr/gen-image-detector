@@ -4,6 +4,7 @@ from tqdm import tqdm
 import cv2
 from get_frames import FrameExtractor
 import pandas as pd
+from dataset import FrameDataset
 
 def get_list_of_videos() -> list[tuple[str, int]]:
     """Save face data from videos into a list of (video_path, label) tuples."""
@@ -53,27 +54,10 @@ def get_face_data(data: list[tuple[str, int, str]], output_dir: str) -> None:
         'video_path']
     ).to_csv(os.path.join(output_dir, 'face_data.csv'), index=False)  
 
-class FrameDataset(torch.utils.data.Dataset):
-    def __init__(self,  transform=None):
-        self.transform = transform
-        self.dataset = pd.read_csv("faces_data/face_data.csv")
-        
-    def __len__(self):
-        return len(self.dataset)
-
-    def __getitem__(self, idx):
-        print(self.dataset.head())
-        label = self.dataset.iloc[idx]["label"]
-        image = cv2.imread(self.dataset.iloc[idx]["image_path"])
-        if self.transform:
-            image = self.transform(image)
-        return image, label
-    
 if __name__ == "__main__":
     data = get_list_of_videos()
     output_dir = "faces_data"
     get_face_data(data, output_dir)
-
     dataset = FrameDataset()
     print(f"Dataset size: {len(dataset)}")
     image, label = dataset[0]
