@@ -4,6 +4,7 @@ from dataset import FrameDataset
 from models.baseline import EfficientNetBasedModel
 from sklearn.metrics import accuracy_score, f1_score
 import pandas as pd
+import create_face_data
 
 def validate_model(model, dataloader, criterion, device):
     model.eval()
@@ -88,8 +89,13 @@ def train_model(
 
 def get_split() ->tuple[FrameDataset, FrameDataset]:
     dataset = FrameDataset()
-    test_videos = pd.read_csv("data\\archive (3)\\List_of_testing_videos.txt", sep = " ")
-    test_videos['video_name'] = test_videos['video_path'].apply(lambda x:"data\\archive (3)\\"+ x.replace('/','\\'))
+    test_videos = pd.read_csv(create_face_data.PATH_TO_VIDEOS + "\\List_of_testing_videos.txt", sep = " ")
+    test_videos['video_name'] = test_videos['video_path'].apply(
+        lambda x:
+            create_face_data.PATH_TO_VIDEOS + \
+            "\\"+\
+            x.replace('/','\\')
+    )
     test_videos["label"] = test_videos["label"].map({1:0,0:1}) 
 
     test_df = dataset.df[dataset.df['video_path'].isin(test_videos['video_name'])]

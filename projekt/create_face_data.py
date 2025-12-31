@@ -6,13 +6,15 @@ from get_frames import FrameExtractor
 import pandas as pd
 from dataset import FrameDataset
 
+PATH_TO_VIDEOS = "data\\archive"
+
 def get_list_of_videos() -> list[tuple[str, int]]:
     """Save face data from videos into a list of (video_path, label) tuples."""
     data = []
     for folder in [
-        ("data\\archive (3)\\Celeb-real",0,"celebreal"),
-        ("data\\archive (3)\\Celeb-synthesis",1,"celebsyn"),
-        ("data\\archive (3)\\Youtube-real",0,"ytreal"),]:
+        (PATH_TO_VIDEOS + "\\Celeb-real",0,"celebreal"),
+        (PATH_TO_VIDEOS + "\\Celeb-synthesis",1,"celebsyn"),
+        (PATH_TO_VIDEOS + "\\Youtube-real",0,"ytreal"),]:
         for file in tqdm(os.listdir(folder[0])):
             if file.endswith('.mp4'):
                 video_path = os.path.join(folder[0], file)
