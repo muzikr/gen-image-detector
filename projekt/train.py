@@ -5,7 +5,9 @@ from models.baseline import EfficientNetBasedModel
 from sklearn.metrics import accuracy_score, f1_score
 import pandas as pd
 import create_face_data
+import torchvision.transforms as transforms
 
+""""""
 def validate_model(model, dataloader, criterion, device):
     model.eval()
     all_preds = []
@@ -99,9 +101,21 @@ def get_split() ->tuple[FrameDataset, FrameDataset]:
     test_videos["label"] = test_videos["label"].map({1:0,0:1}) 
 
     test_df = dataset.df[dataset.df['video_path'].isin(test_videos['video_name'])]
+    #print(f"Test videos found: {len(test_df['video_path'].unique())}")
+    #exit()
     train_df = dataset.df[~dataset.df['video_path'].isin(test_videos['video_name'])]   
 
-    train_dataset = FrameDataset()
+
+    transform_train = transforms.Compose(
+                [
+                    transforms.RandomHorizontalFlip(),
+                    transforms.ColorJitter(
+                        brightness=0.2, contrast=0.2, saturation=0.2
+                    )
+                ]
+    )
+
+    train_dataset = FrameDataset(transform=transform_train)
     train_dataset.df = train_df.reset_index(drop=True)
     test_dataset = FrameDataset()
     test_dataset.df = test_df.reset_index(drop=True)
@@ -109,22 +123,26 @@ def get_split() ->tuple[FrameDataset, FrameDataset]:
     return train_dataset, test_dataset
 
 def main():
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = "cuda" 
     train_dataset, val_dataset = get_split()
 
     train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=16, shuffle=True
+        train_dataset, batch_size=64, shuffle=True, 
     )
     val_loader = torch.utils.data.DataLoader(
-        val_dataset, batch_size=16, shuffle=False
+        val_dataset, batch_size=64, shuffle=False,
     )
+    from torchvision import models
 
-    model = EfficientNetBasedModel()
-    model.backbone.requires_grad_(False)
+    weights = models.ResNet18_Weights.IMAGENET1K_V1
+    model = models.resnet18(weights=weights)
+    num_feats = model.fc.in_features
+    model.fc = torch.nn.Linear(num_feats, 2) 
+    model = model.to(device)
 
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(
-        model.classifier.parameters(), lr=1e-3
+        model.parameters(), lr=1e-4
     )
 
     train_model(
@@ -133,12 +151,14 @@ def main():
         val_loader=val_loader,
         criterion=criterion,
         optimizer=optimizer,
-        num_epochs=10,
+        num_epochs=5,
         device=device,
-        log_every=10
+        log_every=30
     )
 
 if __name__ == "__main__":
     get_split()
   #  exit()
     main()
+
+
